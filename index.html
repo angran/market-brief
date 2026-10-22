@@ -353,14 +353,14 @@ function renderIssue(it){
 (async function(){
   const pick=document.getElementById("pick"),prev=document.getElementById("prev"),next=document.getElementById("next"),main=document.getElementById("issue");
   let list=[];
-  try{const r=await fetch("issues/manifest.json",{cache:"no-store"});if(r.ok)list=await r.json();}catch(e){}
+  try{const r=await fetch("issues/manifest.json?t="+Date.now(),{cache:"no-store"});if(r.ok)list=await r.json();}catch(e){}
   if(!list.length){main.innerHTML=`<p class="empty">还没有内容。第一期会在下一个推送时间生成。</p>`;pick.hidden=true;prev.hidden=true;next.hidden=true;return;}
   const order={am:1,cn:2,us:3};
   list.sort((a,b)=>a.date===b.date?order[b.slot]-order[a.slot]:b.date.localeCompare(a.date));
   pick.innerHTML=list.map(it=>`<option value="${esc(it.id)}">${esc(it.date.slice(5))} ${esc(SLOT[it.slot]||"")}</option>`).join("");
   async function load(it){
     const m=it.date.slice(0,7);
-    if(!MONTHS[m]){const r=await fetch(`issues/${m}.json`,{cache:"no-store"});if(!r.ok)throw new Error(`${m}.json ${r.status}`);MONTHS[m]=await r.json();}
+    if(!MONTHS[m]){const r=await fetch(`issues/${m}.json?t=${Date.now()}`,{cache:"no-store"});if(!r.ok)throw new Error(`${m}.json ${r.status}`);MONTHS[m]=await r.json();}
     return MONTHS[m][it.id];
   }
   async function show(id){
