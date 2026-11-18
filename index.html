@@ -159,6 +159,18 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
 .ev .tm{font-family:var(--f-num);color:var(--ink-3);font-size:13px;padding-top:1px}
 .ev.key .what{font-weight:500}
 
+.upc{display:flex;flex-direction:column;gap:14px}
+.upc-day{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+.upc-h{font-size:13px;font-weight:500;color:var(--ink-2);background:var(--sunk);padding:7px 14px}
+.upc-ev{display:grid;grid-template-columns:76px auto minmax(0,1fr);gap:10px;align-items:baseline;padding:8px 14px;border-top:1px solid var(--line);font-size:14px}
+.upc-ev .tm{font-family:var(--f-num);font-size:12.5px;color:var(--ink-3);white-space:nowrap}
+.upc-ev .tag{font-size:11.5px;padding:1px 7px;border-radius:999px;background:var(--sunk);color:var(--ink-2);white-space:nowrap}
+.upc-ev .tag.ai{background:var(--views-soft);color:var(--views);font-weight:700}
+.upc-ev.big .what{font-weight:700}
+.upc-more{border:0;border-top:1px solid var(--line);border-radius:0;background:transparent}
+.upc-more>summary{padding:7px 14px;font-size:12.5px;font-weight:400;color:var(--ink-3)}
+.upc-more .upc-ev .what{color:var(--ink-2)}
+@media (max-width:520px){.upc-ev{grid-template-columns:62px auto minmax(0,1fr);gap:8px}}
 .bubble{margin:0;display:flex;flex-direction:column;gap:8px}
 .fig-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;align-items:baseline}
 .bubble-scroll{overflow-x:auto;border-radius:10px;background:#1E1F26;border:1px solid var(--line)}
@@ -261,6 +273,17 @@ const R = {
     return (b.title?`<div class="chart-title">${esc(b.title)}</div>`:"")+`<div class="tbl-wrap"><table><thead><tr>${b.columns.map((c,i)=>`<th class="${al[i]==="r"?"r":""}">${esc(c)}</th>`).join("")}</tr></thead><tbody>${b.rows.map(r=>`<tr>${r.map((c,i)=>`<td class="${al[i]==="r"?"r num":""}">${i===0&&b.tickFirst?`<span class="tick">${esc(c)}</span>`:md(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`+(b.note?`<p class="src">${md(b.note)}</p>`:"");
   },
   schedule(b){return `<div class="sched">${b.items.map(e=>`<div class="ev ${e.key?"key":""}"><span class="tm">${esc(e.time)}</span><span class="what">${md(e.what)}</span></div>`).join("")}</div>`;},
+  upcoming(b){
+    // 未来 3 天的重要事项（日历/events.json），按天分组；AI 标签突出，level 3 加粗
+    const d0=new Date(b.from+"T00:00:00Z"), rel=["今天","明天","后天"];
+    const label=d=>{const x=new Date(d+"T00:00:00Z"),n=Math.round((x-d0)/864e5);return `${rel[n]||""}${rel[n]?" · ":""}${d.slice(5).replace("-","/")} 周${WD[x.getUTCDay()]}`;};
+    if(!b.items||!b.items.length)return `<p class="src">未来 3 天没有登记的重要事项。</p>`;
+    const days=[...new Set(b.items.map(e=>e.date))];
+    const row=e=>`<div class="upc-ev${e.level>=3?" big":""}"><span class="tm">${esc(e.time||"—")}</span><span class="tag${e.tag==="AI"?" ai":""}">${esc(e.tag)}</span><span class="what">${md(e.what)}</span></div>`;
+    const main=e=>e.tag==="AI"||(e.level||1)>=2;  // AI 和重要事项直接列，其余收进折叠
+    return `<div class="upc">${days.map(d=>{const its=b.items.filter(e=>e.date===d),a=its.filter(main),r=its.filter(e=>!main(e));
+      return `<div class="upc-day"><div class="upc-h">${label(d)}</div>${a.map(row).join("")}${r.length?`<details class="upc-more"><summary>还有 ${r.length} 项值得留意</summary>${r.map(row).join("")}</details>`:""}</div>`;}).join("")}</div>`;
+  },
   list(b){return (b.title?`<h3>${esc(b.title)}</h3>`:"")+`<ul class="plain">${b.items.map(i=>`<li>${md(i)}</li>`).join("")}</ul>`;},
   text(b){return `<p class="${b.muted?"src":"lede"}">${md(b.text)}</p>`;},
   notice(b){return `<div class="notice">${md(b.text)}</div>`;},
